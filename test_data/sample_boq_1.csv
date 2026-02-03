@@ -1,0 +1,20 @@
+item_no,description,quantity,location
+A1,38W Linear Batten for wet-room bathroom areas IP65 required,12,Bathroom Block B
+A2,DITTO but with emergency backup,4,Bathroom Block B - Emergency
+A3,Same as above but IP44 for kitchen area,8,Kitchen
+B1,15W Round Downlight for office IP20 4000K,24,Open Plan Office
+B2,DITTO,24,Meeting Rooms
+B3,Same as A1 but 20W variant,6,Utility Room
+C1,50W LED Panel 600x600mm for clean room environment IP65,16,Clean Room A
+C2,48W Panel Light 60x60 standard office IP20,32,Admin Building
+D1,100W LED High Bay Industrial warehouse application weatherproof,8,Warehouse
+D2,",8,Loading Bay
+E1,7W Adjustable Spotlight recessed for retail display,36,Showroom
+E2,DITTO but DALI compatible for lighting control,12,Feature Display
+F1,30W Circular downlight for reception area with dimming,4,Reception
+F2,Same as above but IP44 for exterior canopy,2,Entrance Canopy
+G1,LED Linear profile 40W/m suspended for open office,45m,Open Plan Ceiling
+G2,",15m,Corridor
+H1,Street Light 150W for car park outdoor application IP66,12,Car Park
+I1,Flood Light 200W for building facade external,6,Facade Lighting
+J1,Exit Sign emergency lighting self-contained 3hr,8,Fire Exits

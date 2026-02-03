@@ -1,0 +1,16 @@
+Reference;Product Description;Qty;Unit;Area
+001;LED Downlight 12W IP20 recessed round 4000K for general office lighting;50;pcs;Ground Floor
+002;LED Downlight 12W IP44 recessed round 4000K for bathroom application;20;pcs;Toilets
+003;LED Linear Batten 36W 1200mm surface mounted for corridor;15;pcs;Corridors
+004;DITTO;8;pcs;Stairwells
+005;LED Panel 40W 600x600 for suspended ceiling grid;40;pcs;Office Areas
+006;Same as 005 but with emergency;8;pcs;Emergency Routes
+007;LED High Bay 150W for warehouse high ceiling industrial;6;pcs;Storage
+008;LED Spot 7W track mounted for gallery;24;pcs;Display Area
+009;LED Wall Light 18W exterior IP65 for building perimeter;12;pcs;External
+010;LED Strip 10W/m 24V for cove lighting;30;m;Feature Ceiling
+011;LED Floodlight 100W IP66 for outdoor area lighting;4;pcs;Loading
+012;Exit Light 3W maintained emergency self-contained;6;pcs;Exits
+013;LED Downlight 20W IP65 for shower areas wet location;8;pcs;Shower Block
+014;DITTO but with DALI dimming control;4;pcs;Feature Shower
+015;LED Linear 25W suspended profile for open plan modern office;20;pcs;Design Studio
