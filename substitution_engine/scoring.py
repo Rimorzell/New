@@ -7,7 +7,6 @@ ensuring we always return the best available match.
 
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
-import math
 
 from .models import (
     Product, BOQItem, IPRating, FormFactor, ScoreBreakdown,
@@ -28,11 +27,17 @@ class ScoringWeights:
     wattage: float = 15.0
     lumens: float = 10.0
     efficacy_bonus: float = 5.0
+    cct: float = 4.0
+    length: float = 4.0
+    beam: float = 3.0
 
     # Features
     emergency: float = 5.0
     dali: float = 3.0
     dimming: float = 2.0
+
+    # Text relevance for ambiguous inputs
+    text_relevance: float = 6.0
 
 
 class ScoringEngine:
@@ -58,6 +63,10 @@ class ScoringEngine:
         breakdown.lumen_score, breakdown.lumen_reason = self._score_lumens(item, product)
         breakdown.efficacy_bonus, breakdown.efficacy_reason = self._score_efficacy(item, product)
         breakdown.feature_score, breakdown.feature_reason = self._score_features(item, product)
+        breakdown.cct_score, breakdown.cct_reason = self._score_cct(item, product)
+        breakdown.length_score, breakdown.length_reason = self._score_length(item, product)
+        breakdown.beam_score, breakdown.beam_reason = self._score_beam(item, product)
+        breakdown.text_relevance_score, breakdown.text_relevance_reason = self._score_text_relevance(item, product)
 
         # Calculate total weighted score
         total = breakdown.total_weighted_score
@@ -76,7 +85,11 @@ class ScoringEngine:
             self.weights.form_factor +
             self.weights.wattage +
             self.weights.lumens +
-            self.weights.efficacy_bonus
+            self.weights.efficacy_bonus +
+            self.weights.cct +
+            self.weights.length +
+            self.weights.beam +
+            self.weights.text_relevance
         )
 
         # Add feature weights only if required
@@ -307,6 +320,83 @@ class ScoringEngine:
 
         reason = "; ".join(reasons) if reasons else "No special features required"
         return total_score, reason
+
+    def _score_cct(self, item: BOQItem, product: Product) -> Tuple[float, str]:
+        """Score CCT (color temperature) match."""
+        weight = self.weights.cct
+
+        if item.requested_cct_k is None:
+            return weight * 0.6, "No specific CCT requested"
+
+        if product.cct_k is None:
+            return weight * 0.3, "Product CCT unknown"
+
+        diff = abs(product.cct_k - item.requested_cct_k)
+        if diff <= 200:
+            return weight, f"CCT matches ({product.cct_k:.0f}K)"
+        if diff <= 500:
+            return weight * 0.7, f"CCT within 500K ({product.cct_k:.0f}K)"
+        return weight * 0.4, f"CCT differs by {diff:.0f}K"
+
+    def _score_length(self, item: BOQItem, product: Product) -> Tuple[float, str]:
+        """Score length match for linear products."""
+        weight = self.weights.length
+
+        if item.requested_length_mm is None:
+            return weight * 0.6, "No specific length requested"
+
+        if product.length_mm is None:
+            return weight * 0.3, "Product length unknown"
+
+        diff = abs(product.length_mm - item.requested_length_mm)
+        diff_percent = diff / item.requested_length_mm * 100 if item.requested_length_mm else 0
+
+        if diff_percent <= 5:
+            return weight, f"Length matches ({product.length_mm:.0f}mm)"
+        if diff_percent <= 15:
+            return weight * 0.7, f"Length within 15% ({product.length_mm:.0f}mm)"
+        return weight * 0.4, f"Length differs by {diff_percent:.0f}%"
+
+    def _score_beam(self, item: BOQItem, product: Product) -> Tuple[float, str]:
+        """Score beam angle match."""
+        weight = self.weights.beam
+
+        if item.requested_beam_deg is None:
+            return weight * 0.6, "No specific beam angle requested"
+
+        if product.beam_deg is None:
+            return weight * 0.3, "Product beam angle unknown"
+
+        diff = abs(product.beam_deg - item.requested_beam_deg)
+        if diff <= 5:
+            return weight, f"Beam angle matches ({product.beam_deg:.0f}°)"
+        if diff <= 15:
+            return weight * 0.7, f"Beam angle within 15° ({product.beam_deg:.0f}°)"
+        return weight * 0.4, f"Beam angle differs by {diff:.0f}°"
+
+    def _score_text_relevance(self, item: BOQItem, product: Product) -> Tuple[float, str]:
+        """Score keyword overlap between description and product metadata."""
+        weight = self.weights.text_relevance
+        if not item.raw_description:
+            return 0.0, "No description provided"
+
+        description_terms = set(item.raw_description.lower().split())
+        product_terms = set(
+            f"{product.search_text} {product.category} {product.product_type} {product.sku}".lower().split()
+        )
+        if not description_terms or not product_terms:
+            return weight * 0.2, "Limited text data"
+
+        overlap = description_terms.intersection(product_terms)
+        overlap_ratio = len(overlap) / max(len(description_terms), 1)
+
+        if overlap_ratio >= 0.3:
+            return weight, "Strong keyword overlap"
+        if overlap_ratio >= 0.15:
+            return weight * 0.7, "Moderate keyword overlap"
+        if overlap_ratio > 0:
+            return weight * 0.4, "Weak keyword overlap"
+        return weight * 0.1, "No keyword overlap"
 
     def rank_products(self, item: BOQItem,
                      candidates: List[Product],

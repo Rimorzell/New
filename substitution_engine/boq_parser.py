@@ -29,6 +29,7 @@ class ParsedSpecs:
     length_mm: Optional[float] = None
     diameter_mm: Optional[float] = None
     cct_k: Optional[float] = None
+    beam_deg: Optional[float] = None
 
 
 class BOQParser:
@@ -67,9 +68,12 @@ class BOQParser:
         r'\bsame\s+as\s+previous\b',
         r'\bas\s+above\b',
         r'\brepeat\b',
-        r'"',  # Ditto mark
         r'\bid\.\b',  # id. (idem)
         r'\bidem\b',
+    ]
+
+    BEAM_PATTERNS = [
+        r'(\d+(?:\.\d+)?)\s*(?:deg|degree|degrees|°)',
     ]
 
     def __init__(self):
@@ -194,6 +198,9 @@ class BOQParser:
                 requested_lumens=specs.lumens,
                 requested_ip=specs.ip_rating,
                 requested_form_factor=specs.form_factor,
+                requested_cct_k=specs.cct_k,
+                requested_length_mm=specs.length_mm,
+                requested_beam_deg=specs.beam_deg,
                 environment=specs.environment,
                 requires_emergency=specs.is_emergency,
                 requires_dali=specs.is_dali,
@@ -297,6 +304,9 @@ class BOQParser:
             requested_lumens=modifications.get('requested_lumens', prev.requested_lumens),
             requested_ip=modifications.get('requested_ip', prev.requested_ip),
             requested_form_factor=modifications.get('requested_form_factor', prev.requested_form_factor),
+            requested_cct_k=modifications.get('requested_cct_k', prev.requested_cct_k),
+            requested_length_mm=modifications.get('requested_length_mm', prev.requested_length_mm),
+            requested_beam_deg=modifications.get('requested_beam_deg', prev.requested_beam_deg),
             environment=modifications.get('environment', prev.environment),
             requires_emergency=modifications.get('requires_emergency', prev.requires_emergency),
             requires_dali=modifications.get('requires_dali', prev.requires_dali),
@@ -342,6 +352,7 @@ class BOQParser:
 
         # Extract dimensions
         specs.length_mm = self._extract_length(combined_text)
+        specs.beam_deg = self._extract_beam(combined_text)
 
         return specs
 
@@ -390,6 +401,14 @@ class BOQParser:
                 if 'm' in pattern.lower() and value < 10:
                     value *= 1000
                 return value
+        return None
+
+    def _extract_beam(self, text: str) -> Optional[float]:
+        """Extract beam angle in degrees from text."""
+        for pattern in self.BEAM_PATTERNS:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return float(match.group(1))
         return None
 
     def _infer_environment(self, text: str) -> EnvironmentContext:

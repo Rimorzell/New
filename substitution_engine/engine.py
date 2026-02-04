@@ -184,7 +184,7 @@ class SubstitutionEngine:
                 for p in self.catalog.get_by_form_factor(compat_ff):
                     candidates_by_id[p.row_id] = p
 
-        # Secondary filter: IP rating (add products that meet requirement)
+        # Secondary boost: IP rating (ensure compliant products are included)
         required_ip = item.requested_ip
         if required_ip is None:
             required_ip = ENVIRONMENT_IP_REQUIREMENTS.get(
@@ -193,19 +193,12 @@ class SubstitutionEngine:
             )
 
         ip_products = self.catalog.get_products_meeting_ip(required_ip)
-        ip_product_ids = {p.row_id for p in ip_products}
+        for p in ip_products:
+            candidates_by_id[p.row_id] = p
 
-        if candidates_by_id:
-            # Intersect with IP-appropriate products
-            intersected = {rid: p for rid, p in candidates_by_id.items() if rid in ip_product_ids}
-
-            # If intersection is too small, add IP-appropriate products
-            if len(intersected) < 10:
-                for p in ip_products[:50]:
-                    intersected[p.row_id] = p
-            candidates_by_id = intersected
-        else:
-            for p in ip_products:
+        # Expand to full catalog if the pool is too small
+        if len(candidates_by_id) < 100:
+            for p in self.catalog.products:
                 candidates_by_id[p.row_id] = p
 
         # If still no candidates, use text search
@@ -216,7 +209,7 @@ class SubstitutionEngine:
 
         # Final fallback: all products
         if not candidates_by_id:
-            for p in self.catalog.products[:200]:
+            for p in self.catalog.products:
                 candidates_by_id[p.row_id] = p
 
         return list(candidates_by_id.values())
@@ -309,6 +302,13 @@ class SubstitutionEngine:
                     'lumens': {'score': result.score_breakdown.lumen_score, 'reason': result.score_breakdown.lumen_reason},
                     'efficacy': {'score': result.score_breakdown.efficacy_bonus, 'reason': result.score_breakdown.efficacy_reason},
                     'features': {'score': result.score_breakdown.feature_score, 'reason': result.score_breakdown.feature_reason},
+                    'cct': {'score': result.score_breakdown.cct_score, 'reason': result.score_breakdown.cct_reason},
+                    'length': {'score': result.score_breakdown.length_score, 'reason': result.score_breakdown.length_reason},
+                    'beam': {'score': result.score_breakdown.beam_score, 'reason': result.score_breakdown.beam_reason},
+                    'text_relevance': {
+                        'score': result.score_breakdown.text_relevance_score,
+                        'reason': result.score_breakdown.text_relevance_reason,
+                    },
                 },
                 'alternatives': [
                     {
@@ -341,6 +341,10 @@ class SubstitutionEngine:
                 'wattage': self.scorer.weights.wattage,
                 'lumens': self.scorer.weights.lumens,
                 'efficacy_bonus': self.scorer.weights.efficacy_bonus,
+                'cct': self.scorer.weights.cct,
+                'length': self.scorer.weights.length,
+                'beam': self.scorer.weights.beam,
+                'text_relevance': self.scorer.weights.text_relevance,
             }
         }
 
