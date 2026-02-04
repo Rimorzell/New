@@ -142,6 +142,9 @@ class BOQItem:
     requested_lumens: Optional[float] = None
     requested_ip: Optional[IPRating] = None
     requested_form_factor: Optional[FormFactor] = None
+    requested_cct_k: Optional[float] = None
+    requested_length_mm: Optional[float] = None
+    requested_beam_deg: Optional[float] = None
 
     # Inferred context
     environment: EnvironmentContext = EnvironmentContext.INDOOR_DRY
@@ -181,12 +184,26 @@ class ScoreBreakdown:
     feature_score: float = 0.0
     feature_reason: str = ""
 
+    cct_score: float = 0.0
+    cct_reason: str = ""
+
+    length_score: float = 0.0
+    length_reason: str = ""
+
+    beam_score: float = 0.0
+    beam_reason: str = ""
+
+    text_relevance_score: float = 0.0
+    text_relevance_reason: str = ""
+
     @property
     def total_weighted_score(self) -> float:
         """Sum of all weighted scores."""
         return (self.ip_score + self.form_factor_score +
                 self.wattage_score + self.lumen_score +
-                self.efficacy_bonus + self.feature_score)
+                self.efficacy_bonus + self.feature_score +
+                self.cct_score + self.length_score +
+                self.beam_score + self.text_relevance_score)
 
 
 @dataclass

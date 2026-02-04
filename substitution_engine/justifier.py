@@ -80,6 +80,18 @@ class JustificationGenerator:
         elif "very good" in breakdown.efficacy_reason.lower():
             factors.append("high efficiency")
 
+        # CCT
+        if "matches" in breakdown.cct_reason.lower():
+            factors.append("matched CCT")
+
+        # Length
+        if "matches" in breakdown.length_reason.lower():
+            factors.append("matched length")
+
+        # Beam angle
+        if "matches" in breakdown.beam_reason.lower():
+            factors.append("matched beam angle")
+
         return ", ".join(factors) if factors else ""
 
     def _identify_tradeoffs(self, item: BOQItem, product: Product,
@@ -105,6 +117,18 @@ class JustificationGenerator:
                 tradeoffs.append("emergency option may need separate sourcing")
             if "DALI" in breakdown.feature_reason:
                 tradeoffs.append("DALI variant recommended")
+
+        # CCT mismatch
+        if "differs" in breakdown.cct_reason.lower():
+            tradeoffs.append("CCT deviation")
+
+        # Length mismatch
+        if "differs" in breakdown.length_reason.lower():
+            tradeoffs.append("length deviation")
+
+        # Beam mismatch
+        if "differs" in breakdown.beam_reason.lower():
+            tradeoffs.append("beam angle deviation")
 
         return "; ".join(tradeoffs) if tradeoffs else ""
 
@@ -150,6 +174,33 @@ class JustificationGenerator:
                     f"WATTAGE: {diff_pct:.0f}% difference from specification. "
                     f"Requested {item.requested_wattage}W, matched {product.power_w}W. "
                     "Verify lighting design calculations."
+                )
+
+        # Large CCT difference
+        if item.requested_cct_k and product.cct_k:
+            diff = abs(product.cct_k - item.requested_cct_k)
+            if diff > 500:
+                warnings.append(
+                    f"CCT: {diff:.0f}K difference from specification. "
+                    f"Requested {item.requested_cct_k:.0f}K, matched {product.cct_k:.0f}K."
+                )
+
+        # Large length difference
+        if item.requested_length_mm and product.length_mm:
+            diff_pct = abs(product.length_mm - item.requested_length_mm) / item.requested_length_mm * 100
+            if diff_pct > 20:
+                warnings.append(
+                    f"LENGTH: {diff_pct:.0f}% difference from specification. "
+                    f"Requested {item.requested_length_mm:.0f}mm, matched {product.length_mm:.0f}mm."
+                )
+
+        # Large beam angle difference
+        if item.requested_beam_deg and product.beam_deg:
+            diff = abs(product.beam_deg - item.requested_beam_deg)
+            if diff > 15:
+                warnings.append(
+                    f"BEAM ANGLE: {diff:.0f}° difference from specification. "
+                    f"Requested {item.requested_beam_deg:.0f}°, matched {product.beam_deg:.0f}°."
                 )
 
         return warnings
